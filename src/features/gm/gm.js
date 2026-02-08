@@ -11,6 +11,7 @@ import {
 } from "../../entities/gm/model/gmState.js";
 import { GM_CONTRACT, isGmContractConfigured } from "../../shared/config/gmContract.js";
 import { BrowserProvider, Contract } from "https://esm.sh/ethers@6";
+import { getActiveProvider } from "../wallet/model/walletModel.js";
 
 const updateUi = (state, dictionary) => {
   const status = qs("[data-gm-status]");
@@ -30,8 +31,9 @@ const updateUi = (state, dictionary) => {
 };
 
 const getContract = async () => {
-  if (!window.ethereum) return null;
-  const provider = new BrowserProvider(window.ethereum);
+  const injected = getActiveProvider();
+  if (!injected) return null;
+  const provider = new BrowserProvider(injected);
   const signer = await provider.getSigner();
   return new Contract(GM_CONTRACT.address, GM_CONTRACT.abi, signer);
 };
@@ -39,7 +41,9 @@ const getContract = async () => {
 const refreshChainState = async (address, currentState) => {
   if (!isGmContractConfigured() || !address) return currentState;
   try {
-    const provider = new BrowserProvider(window.ethereum);
+    const injected = getActiveProvider();
+    if (!injected) return currentState;
+    const provider = new BrowserProvider(injected);
     const contract = new Contract(GM_CONTRACT.address, GM_CONTRACT.abi, provider);
     const [totalGm, lastDay] = await Promise.all([
       contract.totalGm(),

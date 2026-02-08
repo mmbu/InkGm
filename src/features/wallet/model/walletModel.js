@@ -9,7 +9,33 @@ const state = {
   connected: false,
 };
 
+let activeProvider = null;
+
 const hasProvider = () => typeof window.ethereum !== "undefined";
+
+const pickProvider = (providers) => {
+  if (!providers || providers.length === 0) return null;
+  return (
+    providers.find((provider) => provider.isRabby) ||
+    providers.find((provider) => provider.isMetaMask) ||
+    providers[0]
+  );
+};
+
+const getInjectedProvider = () => {
+  if (!hasProvider()) return null;
+  if (Array.isArray(window.ethereum.providers)) {
+    return pickProvider(window.ethereum.providers);
+  }
+  return window.ethereum;
+};
+
+const ensureProvider = () => {
+  if (!activeProvider) {
+    activeProvider = getInjectedProvider();
+  }
+  return activeProvider;
+};
 
 const updateState = (nextState) => {
   Object.assign(state, nextState);
@@ -17,8 +43,9 @@ const updateState = (nextState) => {
 };
 
 const syncChain = async () => {
-  if (!hasProvider()) return;
-  const chainId = await window.ethereum.request({ method: "eth_chainId" });
+  const provider = ensureProvider();
+  if (!provider) return;
+  const chainId = await provider.request({ method: "eth_chainId" });
   updateState({ chainId });
 };
 
@@ -27,12 +54,13 @@ export const isInkNetwork = (chainId) =>
 
 export const connectWallet = async () => {
   const dictionary = getDictionary(getStoredLanguage());
-  if (!hasProvider()) {
+  const provider = ensureProvider();
+  if (!provider) {
     showToast(dictionary.toastWalletNotFound);
     return;
   }
   try {
-    const accounts = await window.ethereum.request({
+    const accounts = await provider.request({
       method: "eth_requestAccounts",
     });
     updateState({
@@ -48,12 +76,13 @@ export const connectWallet = async () => {
 
 export const switchToInk = async () => {
   const dictionary = getDictionary(getStoredLanguage());
-  if (!hasProvider()) {
+  const provider = ensureProvider();
+  if (!provider) {
     showToast(dictionary.toastWalletNotFound);
     return;
   }
   try {
-    await window.ethereum.request({
+    await provider.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: INK_NETWORK.chainId }],
     });
@@ -62,7 +91,7 @@ export const switchToInk = async () => {
   } catch (error) {
     if (error?.code === 4902) {
       try {
-        await window.ethereum.request({
+        await provider.request({
           method: "wallet_addEthereumChain",
           params: [INK_NETWORK],
         });
@@ -79,19 +108,22 @@ export const switchToInk = async () => {
 
 export const getWalletState = () => ({ ...state });
 
+export const getActiveProvider = () => ensureProvider();
+
 export const initWalletModel = async () => {
-  if (!hasProvider()) return;
-  window.ethereum.on("accountsChanged", (accounts) => {
+  const provider = ensureProvider();
+  if (!provider) return;
+  provider.on("accountsChanged", (accounts) => {
     updateState({
       address: accounts[0] || null,
       connected: accounts.length > 0,
     });
   });
-  window.ethereum.on("chainChanged", (chainId) => {
+  provider.on("chainChanged", (chainId) => {
     updateState({ chainId });
   });
 
-  const accounts = await window.ethereum.request({
+  const accounts = await provider.request({
     method: "eth_accounts",
   });
   updateState({
