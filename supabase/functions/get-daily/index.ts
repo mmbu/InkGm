@@ -22,12 +22,13 @@ const verifyMint = async (wallet: string) => {
   if (!mintRequired) return true;
   const contractAddress = Deno.env.get("MINT_CONTRACT_ADDRESS");
   const rpcUrl = Deno.env.get("INK_RPC_URL");
+  const tokenId = BigInt(Deno.env.get("MINT_TOKEN_ID") ?? "1");
   if (!contractAddress || !rpcUrl) return false;
 
   const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const abi = ["function balanceOf(address owner) view returns (uint256)"];
+  const abi = ["function balanceOf(address owner, uint256 id) view returns (uint256)"];
   const contract = new ethers.Contract(contractAddress, abi, provider);
-  const balance = await contract.balanceOf(wallet);
+  const balance = await contract.balanceOf(wallet, tokenId);
   return balance > 0n;
 };
 
@@ -131,7 +132,6 @@ Deno.serve(async (req) => {
   const { data: lastClaim } = await supabase
     .from("daily_claims")
     .select("post_id")
-    .eq("wallet", wallet.toLowerCase())
     .order("claimed_at", { ascending: false })
     .limit(1)
     .maybeSingle();

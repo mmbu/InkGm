@@ -1,21 +1,39 @@
 import { qsa, qs } from "../../shared/lib/dom.js";
-import { storage } from "../../shared/lib/storage.js";
 import { showToast } from "../../shared/ui/toast.js";
 import { getDictionary, getStoredLanguage } from "../../app/i18n.js";
 import { onEvent } from "../../shared/lib/events.js";
 import { getWalletState } from "../wallet/model/walletModel.js";
 import { issueNonce, fetchDailyPost } from "../../entities/daily/api/dailyApi.js";
 import { requestSignature } from "../auth/auth.js";
+import {
+  getDailyText,
+  isDailyDone,
+  setDailyDone,
+  setDailyText,
+} from "../../entities/daily/model/dailyState.js";
+import {
+  getGmState,
+  isGmToday,
+} from "../../entities/gm/model/gmState.js";
 
-const STORAGE_KEY = "daily:unlocked";
-
-const updateUi = (isUnlocked, dictionary) => {
+const updateUi = ({ hasWallet, hasGmToday, doneToday }, dictionary) => {
   const badge = qs("[data-daily-status]");
+  const buttons = qsa("[data-daily-action]");
   if (badge) {
-    badge.textContent = isUnlocked
-      ? dictionary.dailyStatusUnlocked
-      : dictionary.dailyStatusLocked;
+    if (!hasWallet) {
+      badge.textContent = dictionary.dailyStatusConnect;
+    } else if (!hasGmToday) {
+      badge.textContent = dictionary.dailyStatusGmRequired;
+    } else if (doneToday) {
+      badge.textContent = dictionary.dailyStatusDone;
+    } else {
+      badge.textContent = dictionary.dailyStatusReady;
+    }
   }
+  const isDisabled = !hasWallet || !hasGmToday || doneToday;
+  buttons.forEach((button) => {
+    button.disabled = isDisabled;
+  });
 };
 
 const updateContent = (text, dictionary) => {
@@ -38,16 +56,34 @@ const updateContent = (text, dictionary) => {
 };
 
 export const initDaily = () => {
-  let isUnlocked = storage.get(STORAGE_KEY, false);
   let dictionary = getDictionary(getStoredLanguage());
   let walletState = getWalletState();
-  updateUi(isUnlocked, dictionary);
-  updateContent("", dictionary);
+  let gmState = getGmState(walletState.address);
+
+  const refresh = () => {
+    const hasWallet = Boolean(walletState.address);
+    const hasGmToday = hasWallet && isGmToday(gmState);
+    const doneToday = hasWallet && isDailyDone(walletState.address);
+    updateUi({ hasWallet, hasGmToday, doneToday }, dictionary);
+    const cachedText = hasWallet ? getDailyText(walletState.address) : "";
+    updateContent(cachedText, dictionary);
+  };
+
+  refresh();
 
   qsa("[data-daily-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       if (!walletState.connected || !walletState.address) {
         showToast(dictionary.toastConnectToMint);
+        return;
+      }
+      if (!isGmToday(gmState)) {
+        showToast(dictionary.toastGmRequired);
+        return;
+      }
+      if (isDailyDone(walletState.address)) {
+        showToast(dictionary.toastDailyUsed);
+        refresh();
         return;
       }
       try {
@@ -67,11 +103,10 @@ export const initDaily = () => {
           updateContent("", dictionary);
           return;
         }
+        setDailyText(walletState.address, dailyResponse.post.text);
         updateContent(dailyResponse.post.text, dictionary);
         showToast(dictionary.toastDailyOpen);
-        isUnlocked = true;
-        storage.set(STORAGE_KEY, true);
-        updateUi(isUnlocked, dictionary);
+        refresh();
       } catch (error) {
         const message =
           error?.message === "SUPABASE_NOT_CONFIGURED"
@@ -95,13 +130,27 @@ export const initDaily = () => {
     });
   });
 
+  qsa("[data-daily-share]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!walletState.address) return;
+      setDailyDone(walletState.address, true);
+      refresh();
+    });
+  });
+
   onEvent("lang:changed", ({ dict }) => {
     dictionary = dict;
-    updateUi(isUnlocked, dictionary);
-    updateContent(qs("[data-daily-text]")?.value || "", dictionary);
+    refresh();
   });
 
   onEvent("wallet:changed", (state) => {
     walletState = state;
+    gmState = getGmState(walletState.address);
+    refresh();
+  });
+
+  onEvent("gm:changed", ({ state }) => {
+    gmState = state;
+    refresh();
   });
 };

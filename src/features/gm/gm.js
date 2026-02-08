@@ -1,49 +1,46 @@
-import { onEvent } from "../../shared/lib/events.js";
+import { onEvent, emitEvent } from "../../shared/lib/events.js";
 import { qsa, qs } from "../../shared/lib/dom.js";
-import { storage } from "../../shared/lib/storage.js";
 import { showToast } from "../../shared/ui/toast.js";
 import { getDictionary, getStoredLanguage } from "../../app/i18n.js";
-
-const today = () => new Date().toISOString().slice(0, 10);
-
-const getKey = (address) => `gm:${address || "guest"}`;
-
-const loadState = (key) =>
-  storage.get(key, { lastDate: null, count: 0 });
-
-const saveState = (key, state) => storage.set(key, state);
+import {
+  getGmState,
+  isGmToday,
+  markGm,
+  setGmState,
+} from "../../entities/gm/model/gmState.js";
 
 const updateUi = (state, dictionary) => {
   const status = qs("[data-gm-status]");
   const count = qsa("[data-gm-count]");
+  const isToday = isGmToday(state);
   if (status) {
-    status.textContent =
-      state.lastDate === today()
-        ? dictionary.gmStatusChecked
-        : dictionary.gmStatusNotYet;
+    status.textContent = isToday
+      ? dictionary.gmStatusChecked
+      : dictionary.gmStatusNotYet;
   }
+  qsa("[data-gm-action]").forEach((button) => {
+    button.disabled = isToday;
+  });
   count.forEach((node) => {
     node.textContent = String(state.count);
   });
 };
 
 export const initGm = () => {
-  let currentKey = getKey(null);
-  let currentState = loadState(currentKey);
+  let currentAddress = null;
+  let currentState = getGmState(currentAddress);
   let dictionary = getDictionary(getStoredLanguage());
 
   const handleClick = () => {
-    if (currentState.lastDate === today()) {
+    if (isGmToday(currentState)) {
       showToast(dictionary.toastGmAlready);
       return;
     }
-    currentState = {
-      lastDate: today(),
-      count: currentState.count + 1,
-    };
-    saveState(currentKey, currentState);
+    currentState = markGm(currentState);
+    setGmState(currentAddress, currentState);
     updateUi(currentState, dictionary);
     showToast(dictionary.toastGmRecorded);
+    emitEvent("gm:changed", { address: currentAddress, state: currentState });
   };
 
   qsa("[data-gm-action]").forEach((button) => {
@@ -51,9 +48,10 @@ export const initGm = () => {
   });
 
   onEvent("wallet:changed", (state) => {
-    currentKey = getKey(state.address);
-    currentState = loadState(currentKey);
+    currentAddress = state.address || null;
+    currentState = getGmState(currentAddress);
     updateUi(currentState, dictionary);
+    emitEvent("gm:changed", { address: currentAddress, state: currentState });
   });
 
   onEvent("lang:changed", ({ dict }) => {
@@ -62,4 +60,5 @@ export const initGm = () => {
   });
 
   updateUi(currentState, dictionary);
+  emitEvent("gm:changed", { address: currentAddress, state: currentState });
 };
