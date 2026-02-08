@@ -11,16 +11,18 @@ import {
 } from "../../entities/gm/model/gmState.js";
 import { GM_CONTRACT, isGmContractConfigured } from "../../shared/config/gmContract.js";
 import { BrowserProvider, Contract } from "https://esm.sh/ethers@6";
-import { getActiveProvider } from "../wallet/model/walletModel.js";
+import { getActiveProvider, getWalletState } from "../wallet/model/walletModel.js";
 
-const updateUi = (state, dictionary) => {
+const updateUi = (state, dictionary, hasWallet) => {
   const status = qs("[data-gm-status]");
   const total = qs("[data-gm-total]");
-  const isToday = isGmToday(state);
+  const isToday = hasWallet && isGmToday(state);
   if (status) {
-    status.textContent = isToday
-      ? dictionary.gmStatusChecked
-      : dictionary.gmStatusNotYet;
+    status.textContent = !hasWallet
+      ? dictionary.gmStatusConnect
+      : isToday
+        ? dictionary.gmStatusChecked
+        : dictionary.gmStatusNotYet;
   }
   qsa("[data-gm-action]").forEach((button) => {
     button.disabled = isToday;
@@ -61,9 +63,14 @@ const refreshChainState = async (address, currentState) => {
 export const initGm = () => {
   let currentAddress = null;
   let currentState = getGmState(currentAddress);
+  let walletState = getWalletState();
   let dictionary = getDictionary(getStoredLanguage());
 
   const handleClick = async () => {
+    if (!walletState.address) {
+      showToast(dictionary.toastGmConnect);
+      return;
+    }
     if (!isGmContractConfigured()) {
       showToast(dictionary.toastGmNotConfigured);
       return;
@@ -83,7 +90,7 @@ export const initGm = () => {
       currentState = markGm(currentState);
       currentState = await refreshChainState(currentAddress, currentState);
       setGmState(currentAddress, currentState);
-      updateUi(currentState, dictionary);
+      updateUi(currentState, dictionary, Boolean(walletState.address));
       showToast(dictionary.toastGmRecorded);
       emitEvent("gm:changed", { address: currentAddress, state: currentState });
     } catch {
@@ -96,24 +103,25 @@ export const initGm = () => {
   });
 
   onEvent("wallet:changed", (state) => {
+    walletState = state;
     currentAddress = state.address || null;
     currentState = getGmState(currentAddress);
     refreshChainState(currentAddress, currentState).then((nextState) => {
       currentState = nextState;
       setGmState(currentAddress, currentState);
-      updateUi(currentState, dictionary);
+      updateUi(currentState, dictionary, Boolean(walletState.address));
       emitEvent("gm:changed", { address: currentAddress, state: currentState });
     });
   });
 
   onEvent("lang:changed", ({ dict }) => {
     dictionary = dict;
-    updateUi(currentState, dictionary);
+    updateUi(currentState, dictionary, Boolean(walletState.address));
   });
 
   refreshChainState(currentAddress, currentState).then((nextState) => {
     currentState = nextState;
-    updateUi(currentState, dictionary);
+    updateUi(currentState, dictionary, Boolean(walletState.address));
     emitEvent("gm:changed", { address: currentAddress, state: currentState });
   });
 };
