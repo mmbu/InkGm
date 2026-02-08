@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ink GM Mint</title>
+    <link rel="stylesheet" href="./src/app/app.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="logo">INK GM</div>
+        <nav class="nav">
+          <button class="lang-toggle" type="button" data-lang="en">EN</button>
+          <button class="lang-toggle" type="button" data-lang="ru">RU</button>
+        </nav>
+        <div class="wallet">
+          <div class="network-pill" data-network-status>Ink L2: —</div>
+          <button class="btn btn-secondary" type="button" data-wallet-connect>
+            Connect Wallet
+          </button>
+        </div>
+      </header>
+
+      <main class="main">
+        <section class="hero">
+          <div class="hero-content">
+            <p class="eyebrow" data-i18n="heroEyebrow">Tap to GM on Ink L2</p>
+            <h1 data-i18n="heroTitle">GM. Mint. Share.</h1>
+            <p class="hero-subtitle" data-i18n="heroSubtitle">
+              Daily GM check-ins on Ink. Mint the NFT for $5 to unlock Daily reposts.
+            </p>
+            <div class="hero-actions">
+              <button
+                class="btn btn-primary"
+                type="button"
+                data-gm-action
+                data-i18n="gmButton"
+              >
+                GM
+              </button>
+              <button
+                class="btn btn-accent"
+                type="button"
+                data-mint-action
+                data-i18n="mintButton"
+              >
+                Mint NFT — $5
+              </button>
+              <button
+                class="btn btn-ghost"
+                type="button"
+                data-daily-action
+                data-i18n="dailyButton"
+              >
+                Daily Repost
+              </button>
+            </div>
+            <div class="hero-meta">
+              <div class="meta-card">
+                <div class="meta-label" data-i18n="gmTodayLabel">GM today</div>
+                <div class="meta-value" data-gm-status>—</div>
+              </div>
+              <div class="meta-card">
+                <div class="meta-label" data-i18n="gmTotalLabel">Total GM</div>
+                <div class="meta-value" data-gm-count>0</div>
+              </div>
+              <div class="meta-card">
+                <div class="meta-label" data-i18n="walletLabel">Wallet</div>
+                <div class="meta-value" data-wallet-short>Not connected</div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-visual">
+            <div class="orb"></div>
+            <div class="grid"></div>
+          </div>
+        </section>
+
+        <section class="panel gm-panel">
+          <h2 data-i18n="gmPanelTitle">GM Check-in</h2>
+          <p data-i18n="gmPanelText">
+            No NFT needed to say GM. One GM per day per wallet or device.
+          </p>
+          <button
+            class="btn btn-primary"
+            type="button"
+            data-gm-action
+            data-i18n="gmButton"
+          >
+            GM
+          </button>
+        </section>
+
+        <section class="panel mint-panel">
+          <h2 data-i18n="mintPanelTitle">Ink Mint — $5</h2>
+          <p data-i18n="mintPanelText">
+            Mint the GM NFT on Ink L2. Immutable, ownerless contract. Rewards go to
+            0x2059...b63F.
+          </p>
+          <button
+            class="btn btn-accent"
+            type="button"
+            data-mint-action
+            data-i18n="mintButton"
+          >
+            Mint NFT — $5
+          </button>
+          <div class="panel-note" data-i18n="mintPanelNote">
+            Minting will be enabled after contract deployment.
+          </div>
+        </section>
+
+        <section class="panel daily-panel">
+          <h2 data-i18n="dailyPanelTitle">Daily Repost</h2>
+          <p data-i18n="dailyPanelText">
+            Unlock one-click reposts about Ink. Available after mint.
+          </p>
+          <div class="daily-actions">
+            <button
+              class="btn btn-ghost"
+              type="button"
+              data-daily-action
+              data-i18n="dailyOpenButton"
+            >
+              Open Daily
+            </button>
+            <span class="badge" data-daily-status>Locked</span>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div>Ink GM • Kraken L2</div>
+        <div data-i18n="footerDisclaimer">
+          GM is free. Minting NFT requires Ink L2.
+        </div>
+      </footer>
+    </div>
+
+    <div class="toast" data-toast></div>
+    <script type="module" src="./src/app/index.js"></script>
+  </body>
+</html>
