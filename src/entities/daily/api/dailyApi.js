@@ -30,3 +30,5 @@ export const issueNonce = (wallet) =>
 
 export const fetchDailyPost = (wallet, signature, nonce) =>
   request("get-daily", { wallet, signature, nonce });
+
+export const fetchStats = () => request("get-stats", {});

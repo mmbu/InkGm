@@ -3,7 +3,11 @@ import { showToast } from "../../shared/ui/toast.js";
 import { getDictionary, getStoredLanguage } from "../../app/i18n.js";
 import { onEvent } from "../../shared/lib/events.js";
 import { getWalletState } from "../wallet/model/walletModel.js";
-import { issueNonce, fetchDailyPost } from "../../entities/daily/api/dailyApi.js";
+import {
+  issueNonce,
+  fetchDailyPost,
+  fetchStats,
+} from "../../entities/daily/api/dailyApi.js";
 import { requestSignature } from "../auth/auth.js";
 import {
   getDailyText,
@@ -55,6 +59,13 @@ const updateContent = (text, dictionary) => {
   share.classList.remove("is-disabled");
 };
 
+const updateTotalPosts = (total) => {
+  const node = qs("[data-daily-total]");
+  if (node) {
+    node.textContent = String(total ?? 0);
+  }
+};
+
 export const initDaily = () => {
   let dictionary = getDictionary(getStoredLanguage());
   let walletState = getWalletState();
@@ -70,6 +81,9 @@ export const initDaily = () => {
   };
 
   refresh();
+  fetchStats()
+    .then((data) => updateTotalPosts(data.totalPosts))
+    .catch(() => updateTotalPosts(0));
 
   qsa("[data-daily-action]").forEach((button) => {
     button.addEventListener("click", async () => {

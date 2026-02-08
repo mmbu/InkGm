@@ -1,0 +1,9 @@
+{
+  "name": "Ink GM Pass",
+  "description": "GM check-in + Daily repost access on Ink L2.",
+  "image": "ipfs://REPLACE_WITH_CID/ink-gm.png",
+  "attributes": [
+    { "trait_type": "Network", "value": "Ink L2" },
+    { "trait_type": "Access", "value": "GM + Daily" }
+  ]
+}
