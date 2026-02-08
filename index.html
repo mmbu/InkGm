@@ -127,6 +127,29 @@
             </button>
             <span class="badge" data-daily-status>Locked</span>
           </div>
+          <div class="daily-content" data-daily-content hidden>
+            <div class="daily-title" data-i18n="dailyContentTitle">Daily post</div>
+            <textarea class="daily-text" readonly data-daily-text></textarea>
+            <div class="daily-content-actions">
+              <button
+                class="btn btn-secondary"
+                type="button"
+                data-daily-copy
+                data-i18n="dailyCopy"
+              >
+                Copy
+              </button>
+              <a
+                class="btn btn-primary is-disabled"
+                target="_blank"
+                rel="noreferrer"
+                data-daily-share
+                data-i18n="dailyShare"
+              >
+                Share on X
+              </a>
+            </div>
+          </div>
         </section>
       </main>
 

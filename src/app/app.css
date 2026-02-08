@@ -224,6 +224,34 @@ body {
   gap: 12px;
 }
 
+.daily-content {
+  margin-top: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.daily-title {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.daily-text {
+  min-height: 120px;
+  border-radius: 16px;
+  border: 1px solid rgba(124, 92, 255, 0.2);
+  background: rgba(10, 15, 30, 0.6);
+  color: var(--text);
+  padding: 12px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.daily-content-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .badge {
   padding: 4px 10px;
   border-radius: 999px;
@@ -270,6 +298,13 @@ body {
 
 .btn[disabled] {
   cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn.is-disabled {
+  pointer-events: none;
   opacity: 0.55;
   transform: none;
   box-shadow: none;
