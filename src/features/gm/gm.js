@@ -32,14 +32,6 @@ const updateUi = (state, dictionary, hasWallet) => {
   }
 };
 
-const getContract = async () => {
-  const injected = getActiveProvider();
-  if (!injected) return null;
-  const provider = new BrowserProvider(injected);
-  const signer = await provider.getSigner();
-  return new Contract(GM_CONTRACT.address, GM_CONTRACT.abi, signer);
-};
-
 const refreshChainState = async (address, currentState) => {
   if (!isGmContractConfigured() || !address) return currentState;
   try {
@@ -80,11 +72,20 @@ export const initGm = () => {
       return;
     }
     try {
-      const contract = await getContract();
-      if (!contract) {
+      const injected = getActiveProvider();
+      if (!injected) {
         showToast(dictionary.toastWalletNotFound);
         return;
       }
+      await injected.request({ method: "eth_requestAccounts" });
+      const provider = new BrowserProvider(injected);
+      const code = await provider.getCode(GM_CONTRACT.address);
+      if (!code || code === "0x") {
+        showToast(dictionary.toastGmContractMissing);
+        return;
+      }
+      const signer = await provider.getSigner();
+      const contract = new Contract(GM_CONTRACT.address, GM_CONTRACT.abi, signer);
       const tx = await contract.gm();
       await tx.wait();
       currentState = markGm(currentState);
@@ -93,8 +94,12 @@ export const initGm = () => {
       updateUi(currentState, dictionary, Boolean(walletState.address));
       showToast(dictionary.toastGmRecorded);
       emitEvent("gm:changed", { address: currentAddress, state: currentState });
-    } catch {
-      showToast(dictionary.toastGmFailed);
+    } catch (error) {
+      const message =
+        error?.shortMessage ||
+        error?.message ||
+        dictionary.toastGmFailed;
+      showToast(message);
     }
   };
 
