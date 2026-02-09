@@ -1,5 +1,5 @@
 export const GM_CONTRACT = {
-  address: "0x8C51651f878DCB760c5FF16f0A42Ea9912FaaA1d",
+  address: "0xB0c5908124766ca318248B195547FbAc210aD86c",
   abi: [
     "function gm() external",
     "function totalGm() view returns (uint256)",
